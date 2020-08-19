@@ -5,6 +5,9 @@ const todoButton  = document.querySelector(".todo-button");
 const todoList  = document.querySelector(".todo-list");
 const filterOption = document.querySelector(".filter-todo");
 
+//localStorage Arrays
+let prevTodos = JSON.parse(localStorage.getItem('prevTodos')) || [];
+let markedTodos = JSON.parse(localStorage.getItem('markedTodos')) || []; // 0 == Not-completed, 1 == Completed
 
 //Event Listeners
 document.addEventListener('DOMContentLoaded', getPrevTodos);
@@ -22,13 +25,12 @@ function addTodo(event){
         
         //Create LI
         const newTodo = document.createElement("li");
-        newTodo.innerText = todoInput.value;
+        newTodo.innerText = todoInput.value.trim();
         newTodo.classList.add("todo-item");
         todoDiv.appendChild(newTodo);
 
         //Saving to localStorage
-        saveLocalStorage(todoInput.value);
-        
+        saveLocalStorage(todoInput.value.trim());
         //Creating MARK Button 
         const markButton = document.createElement("button");
         markButton.innerHTML = '<i class="fas fa-check"></i>'
@@ -51,10 +53,11 @@ function addTodo(event){
 
 function deleteAndCheck(e){
     const item = e.target;
+    const itemParent  = item.parentNode;
 
+    const index = prevTodos.indexOf(itemParent.children[0].innerText);
     //Delete Todo
     if(item.classList[0] === 'delete-btn'){
-       const itemParent  = item.parentNode;
        itemParent.classList.add('fall');
        removeLocalTodo(itemParent);
        itemParent.addEventListener('transitionend', ()=>{
@@ -64,8 +67,16 @@ function deleteAndCheck(e){
 
     //Mark Done
     if(item.classList[0] === 'mark-btn'){
-        const itemParent = item.parentNode;
         itemParent.classList.toggle('completed');
+        //Updating value in markedTodo 
+        if(itemParent.classList.contains('completed')){
+            markedTodos[index] = 1;
+        }
+        else{
+            markedTodos[index] = 0;
+        }
+        console.log(markedTodos);
+        localStorage.setItem('markedTodos', JSON.stringify(markedTodos));
     }
 }
 
@@ -97,13 +108,13 @@ function filterTodo(e){
 }
 
 function saveLocalStorage(todo){
-    let prevTodos = JSON.parse(localStorage.getItem('prevTodos')) || [];
+    markedTodos.push(0);
     prevTodos.push(todo);
     localStorage.setItem('prevTodos', JSON.stringify(prevTodos));
+    localStorage.setItem('markedTodos', JSON.stringify(markedTodos));
 }
 
 function getPrevTodos(){
-    let prevTodos = JSON.parse(localStorage.getItem('prevTodos')) || [];
     prevTodos.forEach( (todo) => {
         const todoDiv = document.createElement("div");
         todoDiv.classList.add("todo");
@@ -128,12 +139,25 @@ function getPrevTodos(){
 
         //Append to ul list 
         todoList.appendChild(todoDiv);
+        
+        if(markedTodos[prevTodos.indexOf(todo)] == 1){
+            todoDiv.classList.add('completed');
+        }
+        else{
+            todoDiv.classList.remove('completed');
+        }
     });
 }
 
 function removeLocalTodo(todo){
-    let todos = JSON.parse(localStorage.getItem('prevTodos'));
     const removeIndex = todo.children[0].innerText;
-    todos.splice(todos.indexOf(removeIndex), 1);
-    localStorage.setItem('prevTodos', JSON.stringify(todos));
+    const prevTodoIndex = prevTodos.indexOf(removeIndex);
+    //prevTodos
+    prevTodos.splice(prevTodoIndex, 1);
+    localStorage.setItem('prevTodos', JSON.stringify(prevTodos));
+    //markedTodos
+    console.log(markedTodos);
+    markedTodos.splice(prevTodoIndex, 1);
+    console.log(markedTodos);
+    localStorage.setItem('markedTodos', JSON.stringify(markedTodos));
 }
